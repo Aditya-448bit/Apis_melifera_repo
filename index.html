@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Apis mellifera Research-Grade 3D Anatomical Atlas — Interactive WebGL/Three.js Museum Exhibit" />
+  <title>Apis mellifera Research-Grade 3D Anatomical Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,700;1,6..72,400;1,6..72,600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="flex flex-col w-screen h-screen overflow-hidden select-none bg-[#070A0F] text-slate-100">
+  <!-- TOP SCIENTIFIC COMMAND BAR -->
+  <header class="glass-panel z-30 flex flex-wrap items-center justify-between gap-2 px-4 py-2 border-b border-slate-800/80">
+    <!-- Brand & Taxonomy Title -->
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400 font-bold text-sm shadow-inner">
+        🐝
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-serif-sci italic font-bold text-base sm:text-lg text-amber-400 tracking-tight">Apis mellifera</h1>
+          <span class="text-[10px] font-mono-tech uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Smithsonian Ultra-Realism Exhibit</span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden xl:block">8K PBR Chitin • 3D Instanced Setae &amp; Pollen • 9 Dissection Modes • 100–180mm Macro DoF</p>
+      </div>
+    </div>
+
+    <!-- 4 Selectable Atlas View Modules -->
+    <nav class="flex flex-wrap items-center gap-1.5" aria-label="Atlas Modules">
+      <button type="button" data-module-btn="full_atlas" class="glass-pill active px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+        <span>1. Whole-Bee &amp; Layers</span>
+        <span class="text-[10px] font-mono-tech opacity-75">(27)</span>
+      </button>
+      <button type="button" data-module-btn="internal_anatomy" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+        <span>2. Internal Organ Systems</span>
+        <span class="text-[10px] font-mono-tech opacity-75">(22)</span>
+      </button>
+      <button type="button" data-module-btn="mouthparts" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+        <span>3. Mouthparts Module</span>
+        <span class="text-[10px] font-mono-tech opacity-75">(15)</span>
+      </button>
+      <button type="button" data-module-btn="sting_apparatus" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+        <span>4. Sting Apparatus</span>
+        <span class="text-[10px] font-mono-tech opacity-75">(9)</span>
+      </button>
+    </nav>
+
+    <!-- Global Mode Toggles, Macro DoF, Cinematic Presentation & Quality Switch -->
+    <div class="flex flex-wrap items-center gap-1.5">
+      <button type="button" id="btn-cinematic-mode" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-300 border-amber-500/40" title="10-Stage Auto Cinematic Flythrough">
+        🎬 Cinematic Tour
+      </button>
+      <button type="button" id="btn-macro-dof" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-medium" title="100mm-180mm Macro Lens &amp; Depth-of-Field Bokeh">
+        180mm Macro DoF
+      </button>
+      <button type="button" id="btn-explode-toggle" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-medium" title="Toggle Exploded Anatomical View">
+        Exploded View
+      </button>
+      <button type="button" id="btn-xray-toggle" class="glass-pill px-2.5 py-1.5 rounded-lg text-xs font-medium" title="Toggle Medical Cuticle X-Ray Transparency">
+        X-Ray Mode
+      </button>
+      <button type="button" id="btn-labels-toggle" class="glass-pill active px-2 py-1.5 rounded-lg text-xs font-medium" title="Show/Hide 3D Reference Labels">
+        3D Pins
+      </button>
+      <button type="button" id="btn-quality-mode" class="glass-pill active px-2.5 py-1.5 rounded-lg text-[11px] font-mono-tech text-emerald-300" title="Switch Photorealistic High Quality vs Educational Low Quality Mode">
+        HQ: Photoreal
+      </button>
+      <button type="button" id="btn-reset-camera" class="glass-pill px-2 py-1.5 rounded-lg text-xs font-medium text-slate-300" title="Reset Camera &amp; Explosion">
+        Reset
+      </button>
+      <button type="button" id="btn-open-arch-modal" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 transition">
+        Engineering &amp; Upgrades
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN 3-COLUMN WORKSPACE -->
+  <div class="relative flex-1 flex overflow-hidden">
+    <!-- LEFT DOCK: DIRECTIVE SIDEBAR SHORTCUTS, CASTE SELECTOR, 9 DISSECTION MODES & STRUCTURE TREE -->
+    <aside class="glass-panel z-20 w-72 lg:w-80 flex-shrink-0 flex flex-col border-r border-slate-800/80 overflow-y-auto p-3 space-y-3">
+      <!-- Directive Sidebar Quick-Access Bar (All 11 Required Sidebar Views) -->
+      <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono-tech uppercase tracking-wider text-amber-400 font-semibold">Exhibit Quick-Select</span>
+          <span class="text-[10px] font-mono-tech text-slate-400">11 Views</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1">
+          <button type="button" data-quick-nav="morphology" class="glass-pill active py-1 px-1.5 rounded text-[11px] font-medium truncate">Morphology</button>
+          <button type="button" data-quick-nav="mouthparts" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Mouthparts</button>
+          <button type="button" data-quick-nav="internal" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Internal</button>
+          <button type="button" data-quick-nav="respiration" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Respiration</button>
+          <button type="button" data-quick-nav="digestive" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Digestive</button>
+          <button type="button" data-quick-nav="nervous" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Nervous</button>
+          <button type="button" data-quick-nav="circulatory" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Circulatory</button>
+          <button type="button" data-quick-nav="sting" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Sting</button>
+          <button type="button" data-quick-nav="exploded" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">Exploded</button>
+          <button type="button" data-quick-nav="xray" class="glass-pill py-1 px-1.5 rounded text-[11px] font-medium truncate">X-Ray Mode</button>
+          <button type="button" data-quick-nav="cinematic" class="glass-pill col-span-2 py-1 px-1.5 rounded text-[11px] font-semibold text-amber-300 truncate">🎬 Cinematic Flythrough</button>
+        </div>
+      </div>
+
+      <!-- Caste Comparison Switcher (Worker / Queen / Drone) -->
+      <div id="caste-selector-block" class="p-2.5 rounded-xl bg-slate-900/75 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-amber-400 font-semibold">Caste Comparison</span>
+          <button type="button" id="btn-open-caste-modal" class="text-[11px] text-amber-300 hover:underline font-medium">Matrix Table →</button>
+        </div>
+        <div class="grid grid-cols-3 gap-1">
+          <button type="button" data-caste-btn="worker" class="glass-pill active py-1.5 px-2 rounded-md text-xs font-medium text-center">Worker ♀</button>
+          <button type="button" data-caste-btn="queen" class="glass-pill py-1.5 px-2 rounded-md text-xs font-medium text-center">Queen ♛</button>
+          <button type="button" data-caste-btn="drone" class="glass-pill py-1.5 px-2 rounded-md text-xs font-medium text-center">Drone ♂</button>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
+          <div class="p-1.5 rounded bg-slate-950/70 border border-slate-800/80">
+            <div class="text-slate-400 text-[10px]">Body Length</div>
+            <div id="caste-len-val" class="font-mono-tech text-amber-300 font-semibold">12.0 – 15.0 mm</div>
+          </div>
+          <div class="p-1.5 rounded bg-slate-950/70 border border-slate-800/80">
+            <div class="text-slate-400 text-[10px]">Ommatidia</div>
+            <div id="caste-eye-val" class="font-mono-tech text-slate-200 font-semibold">4,500 – 5,500 / eye</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9 Dissection Modes + 8 Progressive Dissection Layers -->
+      <div id="dissection-layers-block" class="space-y-2">
+        <div class="space-y-1">
+          <label for="select-dissection-mode-9" class="text-[10px] font-mono-tech uppercase tracking-wider text-amber-400 font-semibold block">9 Dissection Mode Presets</label>
+          <select id="select-dissection-mode-9" class="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            <option value="1">1. External View (Full Setae &amp; Pollen)</option>
+            <option value="2">2. Transparency (Medical X-Ray)</option>
+            <option value="3">3. Cuticle (Chitin Sclerites Only)</option>
+            <option value="4">4. Musculature (Indirect Flight Muscles)</option>
+            <option value="5">5. Respiratory (Spiracles, Tracheae, Air Sacs)</option>
+            <option value="6">6. Digestive (Crop, Midgut, Hindgut, Rectum)</option>
+            <option value="7">7. Nervous (Brain, Ganglia, Ventral Cord)</option>
+            <option value="8">8. Circulatory (Heart, Ostia, Aorta, Haemocoel)</option>
+            <option value="9">9. Reproductive (Caste Ovaries/Testes &amp; Sting)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-slate-300 font-semibold">8 Dissection Layers</span>
+          <div class="flex items-center gap-1">
+            <button type="button" id="btn-layers-all" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-200">All On</button>
+            <button type="button" id="btn-layers-internal-only" class="px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-[10px] text-amber-300 border border-amber-500/30">Peel Cuticle</button>
+          </div>
+        </div>
+        <div id="dissection-layers-list" class="space-y-1"></div>
+      </div>
+
+      <!-- Exploded View & Cross-Section Slicer Sliders -->
+      <div class="p-2.5 rounded-xl bg-slate-900/75 border border-slate-800 space-y-2.5">
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300 font-medium">Exploded Separation</span>
+            <span id="label-explode-pct" class="font-mono-tech text-amber-400 text-[11px]">0%</span>
+          </div>
+          <input type="range" id="slider-explode" min="0" max="1" step="0.01" value="0" class="sci-slider" />
+        </div>
+
+        <div class="space-y-1.5 pt-1 border-t border-slate-800/80">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300 font-medium">Cross-Section Plane</span>
+            <div class="flex gap-1">
+              <button type="button" data-slice-axis="none" class="glass-pill active px-1.5 py-0.5 rounded text-[10px] font-mono-tech">Off</button>
+              <button type="button" data-slice-axis="z" class="glass-pill px-1.5 py-0.5 rounded text-[10px] font-mono-tech" title="Sagittal Midline Cut">Sagittal</button>
+              <button type="button" data-slice-axis="x" class="glass-pill px-1.5 py-0.5 rounded text-[10px] font-mono-tech" title="Transverse Cross Cut">Transverse</button>
+              <button type="button" data-slice-axis="y" class="glass-pill px-1.5 py-0.5 rounded text-[10px] font-mono-tech" title="Dorsal-Ventral Cut">Coronal</button>
+            </div>
+          </div>
+          <input type="range" id="slider-slice-pos" min="-1.5" max="1.5" step="0.02" value="0" class="sci-slider" />
+        </div>
+      </div>
+
+      <!-- Searchable Exact Reference Structure Tree -->
+      <div class="flex-1 flex flex-col min-h-[160px] space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-slate-300 font-semibold">Reference Labels</span>
+          <span id="structure-count-badge" class="text-[10px] font-mono-tech px-1.5 py-0.5 rounded bg-slate-800 text-amber-300">27 / 27</span>
+        </div>
+        <div class="flex gap-1.5">
+          <input
+            type="text"
+            id="input-structure-search"
+            placeholder="Filter exact label or Latin..."
+            class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+          />
+        </div>
+        <select id="select-region-filter" class="w-full px-2 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          <option value="ALL">All Regions</option>
+        </select>
+        <div id="structure-tree-list" class="flex-1 overflow-y-auto space-y-1 pr-1"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER 3D INTERACTIVE VIEWPORT -->
+    <main id="canvas-wrapper" class="relative flex-1 flex flex-col overflow-hidden">
+      <!-- Top Viewport Overlay: Active Module Title, Sub-Mode Presets & Live Telemetry -->
+      <div class="z-20 pointer-events-none flex flex-col gap-2 p-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="pointer-events-auto glass-panel px-3.5 py-2 rounded-xl border border-slate-800/90 max-w-xl">
+            <div id="module-header-title" class="text-xs sm:text-sm font-semibold text-amber-300">Whole-Bee Atlas &amp; Caste Dissection</div>
+            <div id="module-header-subtitle" class="text-[11px] text-slate-400">External reference labels, 8-layer progressive dissection, and Worker / Queen / Drone morphometrics</div>
+          </div>
+          <div id="module-submode-bar" class="pointer-events-auto flex flex-wrap items-center gap-1.5"></div>
+        </div>
+
+        <!-- Live Museum Render & Optical Telemetry Bar -->
+        <div id="render-telemetry-bar" class="pointer-events-auto self-start glass-panel px-3 py-1 rounded-lg border border-slate-800/80 flex flex-wrap items-center gap-3 text-[11px] font-mono-tech text-slate-300">
+          <span>FPS: <strong id="telemetry-fps" class="text-emerald-400">60</strong></span>
+          <span>Mesh Density: <strong id="telemetry-polys" class="text-amber-300">548,400 tris (Instanced PBR)</strong></span>
+          <span>Setae &amp; Pollen: <strong id="telemetry-particles" class="text-slate-100">6,770 3D Strands / Grains</strong></span>
+          <span>Optics: <strong id="telemetry-lens" class="text-cyan-300">105mm Macro f/4.0</strong></span>
+        </div>
+      </div>
+
+      <!-- Three.js WebGL Container, Macro DoF Bokeh Vignette & Projected 3D Pin Overlay -->
+      <div id="webgl-container" class="relative flex-1 w-full h-full cursor-grab active:cursor-grabbing">
+        <div id="macro-dof-overlay"></div>
+        <div id="labels-container"></div>
+
+        <!-- 10-Stage Auto Cinematic Presentation Flythrough HUD Card -->
+        <div id="cinematic-tour-hud" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl glass-panel rounded-2xl border border-amber-500/50 p-4 shadow-2xl space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono-tech text-[10px] uppercase">BBC Earth / Museum Showcase</span>
+              <span id="tour-step-badge" class="font-mono-tech text-xs text-slate-300">Stage 1 / 10</span>
+              <span id="tour-lens-badge" class="font-mono-tech text-[11px] text-cyan-300">100mm Macro f/4.0</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btn-tour-prev" class="glass-pill px-2 py-1 rounded text-xs">◀ Prev</button>
+              <button type="button" id="btn-tour-next" class="glass-pill px-2 py-1 rounded text-xs">Next ▶</button>
+              <button type="button" id="btn-tour-stop" class="px-2.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-medium">Exit Tour ✕</button>
+            </div>
+          </div>
+          <div id="tour-stage-title" class="font-serif-sci text-base font-bold text-amber-300">1. Full Bee Specimen</div>
+          <p id="tour-stage-caption" class="text-xs text-slate-200 leading-relaxed">
+            Apis mellifera specimen under 3-point museum HDRI illumination: chitinous exoskeleton, 3D plumose setae, and coupled wings.
+          </p>
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div id="tour-progress-bar" class="h-full bg-amber-400 transition-all duration-300" style="width: 10%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Viewport Dock: 7 Real-Time Procedural Animations + Slow-Motion Simulation -->
+      <div class="z-20 pointer-events-none p-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="pointer-events-auto glass-panel px-3 py-2 rounded-xl flex flex-wrap items-center gap-1.5 border border-slate-800/90">
+          <span class="text-[10px] font-mono-tech uppercase tracking-wider text-slate-400 mr-1">Kinematics:</span>
+          <button type="button" data-anim-btn="wingFlap" class="glass-pill active px-2.5 py-1 rounded-md text-[11px] font-medium">Wing Flapping (235 Hz)</button>
+          <button type="button" data-anim-btn="antennaScan" class="glass-pill active px-2.5 py-1 rounded-md text-[11px] font-medium">Antenna Scanning</button>
+          <button type="button" data-anim-btn="eyeTrack" class="glass-pill active px-2.5 py-1 rounded-md text-[11px] font-medium">Compound Eye Tracking</button>
+          <button type="button" data-anim-btn="abdomenBreathe" class="glass-pill active px-2.5 py-1 rounded-md text-[11px] font-medium">Breathing Abdomen</button>
+          <button type="button" data-anim-btn="pollenCollect" class="glass-pill px-2.5 py-1 rounded-md text-[11px] font-medium">Pollen Packing</button>
+          <button type="button" data-anim-btn="stingDeploy" class="glass-pill px-2.5 py-1 rounded-md text-[11px] font-medium">Sting Reciprocation</button>
+          <button type="button" data-anim-btn="nectarFeed" class="glass-pill px-2.5 py-1 rounded-md text-[11px] font-medium">Nectar Feeding</button>
+          <button type="button" id="btn-slowmo-toggle" class="glass-pill px-2.5 py-1 rounded-md text-[11px] font-mono-tech text-cyan-300" title="Toggle 0.2x Slow-Motion Biomechanical Simulation">0.2x Slow-Mo</button>
+        </div>
+
+        <div class="pointer-events-auto glass-panel px-3 py-1.5 rounded-xl text-[11px] text-slate-400 font-mono-tech hidden xl:block">
+          Orbit: Drag • Macro Zoom: Scroll • Inspect: Click 3D Pin or Mesh
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT DOCK: RESEARCH ARTICLE SIDEBAR & ANATOMICAL INSPECTOR -->
+    <aside class="glass-panel z-20 w-80 lg:w-96 flex-shrink-0 flex flex-col border-l border-slate-800/80 overflow-y-auto p-4 space-y-4">
+      <!-- Selected Structure Scientific Monograph -->
+      <div class="space-y-2 border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between gap-2">
+          <span id="insp-region-badge" class="text-[10px] font-mono-tech uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">METATHORACIC LEG</span>
+          <span id="insp-system-badge" class="text-[10px] font-mono-tech uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">EXTERNAL</span>
+        </div>
+        <h2 id="insp-title" class="font-serif-sci text-xl font-bold text-white tracking-tight capitalize">pollen basket</h2>
+        <div id="insp-latin" class="font-serif-sci italic text-sm text-amber-400">Corbicula</div>
+      </div>
+
+      <!-- Morphometric & Quantitative Spec Card -->
+      <div class="p-3 rounded-xl bg-slate-900/85 border border-slate-800 space-y-1.5">
+        <div class="text-[10px] font-mono-tech uppercase tracking-wider text-slate-400">Morphometric Specification</div>
+        <p id="insp-dimensions" class="text-xs text-slate-200 font-mono-tech leading-relaxed">
+          Polished concave tibial depression fringed by long curved retaining setae; holds ~10–15 mg pollen/propolis per leg
+        </p>
+      </div>
+
+      <!-- Physiological & Biomechanical Mechanism -->
+      <div class="space-y-1.5">
+        <h3 class="text-[11px] font-mono-tech uppercase tracking-wider text-amber-400 font-semibold">Physiological &amp; Biomechanical Mechanism</h3>
+        <p id="insp-mechanism" class="text-xs sm:text-[13px] text-slate-200 leading-relaxed font-normal">
+          Pollen moistened with regurgitated nectar is squeezed upward from the pollen press onto the smooth corbicular floor, anchored by a single central seta and curved marginal hairs.
+        </p>
+      </div>
+
+      <!-- Primary Literature Reference -->
+      <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+        <div class="text-[10px] font-mono-tech uppercase tracking-wider text-slate-400">Primary Anatomical Reference</div>
+        <p id="insp-citation" class="text-[11px] text-slate-300 italic leading-relaxed">
+          Hodges, D. (1952). The Pollen Loads of the Honeybee.
+        </p>
+      </div>
+
+      <!-- Active Caste Telemetry Summary Card -->
+      <div class="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2.5 mt-auto">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono-tech uppercase tracking-wider text-amber-400 font-semibold">Active Specimen Profile</span>
+          <span id="caste-latin-badge" class="text-[11px] font-serif-sci italic text-slate-300">Apis mellifera — Operaria</span>
+        </div>
+        <p id="caste-summary-text" class="text-xs text-slate-300 leading-relaxed">
+          Non-reproductive female performing age-polyethic tasks: nursing, comb construction via ventral wax mirrors, nest thermoregulation, guarding, and nectar/pollen foraging.
+        </p>
+        <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+          <div class="p-2 rounded bg-slate-950/80 border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">Wet Mass</span>
+            <span id="caste-mass-val" class="font-mono-tech text-slate-100 font-semibold">90 – 120 mg</span>
+          </div>
+          <div class="p-2 rounded bg-slate-950/80 border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">Fundamental Wingbeat</span>
+            <span id="caste-hz-val" class="font-mono-tech text-amber-300 font-semibold">235 Hz</span>
+          </div>
+        </div>
+        <div class="space-y-1 pt-1 text-[11px] border-t border-slate-800/80">
+          <div><span class="text-slate-400">Corbicula:</span> <span id="caste-corbicula-val" class="text-slate-200">Present (specialized metathoracic tibia)</span></div>
+          <div><span class="text-slate-400">Sting Apparatus:</span> <span id="caste-sting-val" class="text-slate-200">Strongly barbed lancets (10–11 recurved barbs)</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODAL 1: WORKER / QUEEN / DRONE COMPARATIVE MORPHOMETRIC MATRIX -->
+  <div id="caste-compare-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-3xl w-full rounded-2xl border border-amber-500/40 p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="font-serif-sci text-lg font-bold text-amber-400">Apis mellifera Caste Allometry &amp; Functional Matrix</h2>
+          <p class="text-xs text-slate-400">Comparative anatomical specializations across Worker, Queen, and Drone castes</p>
+        </div>
+        <button type="button" id="btn-close-caste-modal" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200">Close ✕</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-700 text-amber-300 font-mono-tech uppercase text-[11px]">
+              <th class="py-2 px-3">Anatomical Trait</th>
+              <th class="py-2 px-3">Worker (Operaria ♀)</th>
+              <th class="py-2 px-3">Queen (Regina ♛)</th>
+              <th class="py-2 px-3">Drone (Fucus ♂)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-slate-200">
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Body Length &amp; Mass</td>
+              <td class="py-2 px-3 font-mono-tech">12–15 mm | 90–120 mg</td>
+              <td class="py-2 px-3 font-mono-tech">18–22 mm | 180–280 mg</td>
+              <td class="py-2 px-3 font-mono-tech">15–17 mm | 190–220 mg</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Compound Eyes (Ommatidia)</td>
+              <td class="py-2 px-3">4,500–5,500 (dichoptic lateral)</td>
+              <td class="py-2 px-3">3,500–4,500 (dichoptic lateral)</td>
+              <td class="py-2 px-3">7,500–8,600 (holoptic; meet at vertex)</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Antennal Flagellomeres</td>
+              <td class="py-2 px-3">10 (~3,000 pore plates)</td>
+              <td class="py-2 px-3">10 (~1,600 pore plates)</td>
+              <td class="py-2 px-3">11 (~30,000 pore plates for 9-ODA)</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Metathoracic Corbicula</td>
+              <td class="py-2 px-3 text-emerald-300">Present (Pollen basket + pecten + auricle)</td>
+              <td class="py-2 px-3 text-slate-400">Absent (smooth hind tibia)</td>
+              <td class="py-2 px-3 text-slate-400">Absent</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Mandibular Edge</td>
+              <td class="py-2 px-3">Smooth concave spoon (wax kneading)</td>
+              <td class="py-2 px-3">Sub-apical tooth (cutting queen cells)</td>
+              <td class="py-2 px-3">Reduced, notched</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Ventral Wax Glands</td>
+              <td class="py-2 px-3 text-emerald-300">Functional on Sternites IV–VII</td>
+              <td class="py-2 px-3 text-slate-400">Absent</td>
+              <td class="py-2 px-3 text-slate-400">Absent</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-3 font-medium text-slate-300">Sting / Terminalia</td>
+              <td class="py-2 px-3">Straight shaft, 10–11 strong barbs</td>
+              <td class="py-2 px-3">Decurved shaft, 3–4 vestigial barbs</td>
+              <td class="py-2 px-3">No sting; eversible endophallus</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: PERSONAL INTELLIGENCE & ARCHITECTURAL EXTENSION GUIDE -->
+  <div id="arch-guide-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-3xl w-full rounded-2xl border border-amber-500/40 p-5 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="font-serif-sci text-lg font-bold text-amber-400">Atlas Architecture &amp; Where Further Changes Can Be Done</h2>
+          <p class="text-xs text-slate-400">Modular extension hooks for Micro-CT GLTF assets, custom GLSL shaders, aerodynamic solvers, and pathology layers</p>
+        </div>
+        <button type="button" id="btn-close-arch-modal" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200">Close ✕</button>
+      </div>
+      <div id="arch-modal-body" class="space-y-3"></div>
+    </div>
+  </div>
+</div>
+
+  <script src="app.js"></script>
+</body>
+</html>

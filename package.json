@@ -1,0 +1,11 @@
+{
+  "name": "apis-mellifera-3d-atlas",
+  "version": "2.0.0",
+  "description": "Ultra-Realism Interactive 3D Anatomical Atlas of Apis mellifera (Honey Bee)",
+  "main": "app.js",
+  "scripts": {
+    "start": "npx serve . -l 8080",
+    "py-serve": "python3 -m http.server 8080"
+  },
+  "license": "MIT"
+}
